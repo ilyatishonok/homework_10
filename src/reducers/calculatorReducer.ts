@@ -1,61 +1,90 @@
 import { ICalculatorState, CalculatorActionsTypes, CalculatorActions } from '../store/types/calculator';
-
-const isOperation = (symbol: string) => {
-    return ['+', '-', '/', '*'].includes(symbol);
-}
-
-const isDot = (symbol: string) => {
-    return '.' === symbol;
-}
+import { isOperation, calculateExpression, isMinus } from '../utils/calculator';
 
 const initialState: ICalculatorState = {
-    currentOperand: '0',
-    expressions: [],
+    leftOperand: '0',
+    rightOperand: '',
+    currentOperator: '',
     result: '',
 }
 
 const calculatorReducer = (state: ICalculatorState = initialState, action: CalculatorActions): ICalculatorState => {
     switch (action.type) {
         case CalculatorActionsTypes.ADD_OPERATION:
-            let newOperand: string;
-            let newExpressions: string[];
-            let newResult: string = '';
             const isOperationSymbol = isOperation(action.payload);
 
             if (state.result) {
-                newExpressions = isOperationSymbol ? [state.result, action.payload] : [];
-                newOperand = isOperationSymbol ? '' : action.payload;
-                newResult = '';
-
-                return { ...state, currentOperand: newOperand, result: newResult, expressions: newExpressions };
+                return { 
+                    ...state,
+                    leftOperand: isOperationSymbol ? state.result : action.payload,
+                    currentOperator: isOperationSymbol ? action.payload : '',
+                    result: ''
+                };
             }
 
             if (isOperationSymbol) {
-                if (state.currentOperand) {
-                    newExpressions = state.expressions.length ?
-                        [...state.expressions, state.currentOperand, action.payload] :
-                        [state.currentOperand, action.payload];
-                    return { ...state, currentOperand: '', expressions: newExpressions, result: '' };
+                if (!state.currentOperator) {
+                    return { ...state, currentOperator: action.payload};
+                }
+
+                if (state.currentOperator && !state.rightOperand) {
+                    if ((state.currentOperator === '*' || state.currentOperator === '/') && action.payload === '-') {
+                        return { ...state, rightOperand: action.payload };
+                    }
+
+                    if (state.currentOperator !== action.payload) {
+                        return { ...state, currentOperator: action.payload };
+                    }
+                }
+
+                if (state.currentOperator && state.rightOperand) {
+                    if (state.rightOperand === '-') {
+                        return state;
+                    }
+
+                    return { 
+                        ...state,
+                        currentOperator: action.payload,
+                        leftOperand: state.leftOperand + state.currentOperator + state.rightOperand,
+                        rightOperand: '',
+                    }
                 }
             } else {
-                if (state.currentOperand === '0') {
-                    return { ...state, currentOperand: action.payload };
+                if (state.currentOperator) {
+                    return {
+                        ...state,
+                        rightOperand: state.rightOperand + action.payload,
+                    }
+                } else {
+                    return {
+                        ...state,
+                        leftOperand: state.leftOperand === '0' ? action.payload : state.leftOperand + action.payload,
+                    };
                 }
-                
-                return { ...state, currentOperand: state.currentOperand + action.payload };
             }
 
-        return state;
-
+            return state;
         
         case CalculatorActionsTypes.CALCULATE_RESULT:
-            const result = eval(state.expressions.join("") + state.currentOperand);
+            if (state.currentOperator) {
+                const newResult = !state.rightOperand || isMinus(state.rightOperand) ?
+                `${calculateExpression(state.leftOperand)}` :
+                `${calculateExpression(state.leftOperand + state.currentOperator + state.rightOperand)}`
 
-            return { ...state, currentOperand: '', expressions: [], result: result };
+                return {
+                    ...state,
+                    result: newResult,
+                    currentOperator: '',
+                    rightOperand: '',
+                    leftOperand: '',
+                }
+            }
+
+            return state;
 
         case CalculatorActionsTypes.CLEAR:
-            return { ...state, currentOperand: '0', expressions: [], result: ''}; 
-
+            return { ...initialState }; 
+            
         default:
             return state;
             

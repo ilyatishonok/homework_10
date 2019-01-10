@@ -1,20 +1,22 @@
-import React, { Component, MouseEvent } from 'react';
+import React, { Component, MouseEvent, ReactNode } from 'react';
 import styled from 'styled-components';
 
-interface ICalculatorProps {
+export interface ICalculatorProps {
     result: string;
-    expressions: string[];
-    currentOperand: string;
+    leftOperand: string;
+    rightOperand: string;
+    currentOperator: string;
 }
 
-interface ICalculatorDispatchProps {
+export interface ICalculatorDispatchProps {
     addOperation: (operation: string) => void;
     calculate: () => void;
     clear: () => void;
 }
 
-interface ButtonProps {
-    background?: string
+export interface ButtonProps {
+    background?: string;
+    hover?: string;
 }
 
 const CalculatorWrapper = styled.div`
@@ -27,6 +29,7 @@ const CalculatorWrapper = styled.div`
     border: 5px solid #1A1A1A;
     border-radius: 20px;
     margin: 20px;
+    word-wrap: break-word;
     box-shadow: 10px 10px 40px 10px black
 `;
 
@@ -39,10 +42,10 @@ const Display = styled.div`
     align-items: center;
     margin: 30px;
     box-sizing: border-box;
-    height: 20%;
     padding: 30px;
     overflow: hidden;
     font-size: 24px;
+    word-wrap: break-word;
     position: relative;
 `;
 
@@ -56,6 +59,7 @@ const Buttons = styled.div`
     margin-top: 10px;
     border-radius: 10px;
     background: #666666;
+    user-select: none;
     border: 3px solid #1A1A1A;
 `;
 
@@ -75,7 +79,7 @@ const Button = styled.div<ButtonProps>`
     cursor: pointer;
 
     &:hover {
-        background: #dbe0d9;
+        background: ${props => props.hover ? props.hover : '#818f98'};
     }
 `;
 
@@ -89,29 +93,47 @@ class Calculator extends Component<ICalculatorProps & ICalculatorDispatchProps> 
         this.props.calculate();
     }
 
+    private createOperationButton(symbol: string): ReactNode {
+        return (
+            <Button
+                background="#cc6900"
+                hover="#e27909"
+                onClick={symbol === 'C' ? this.props.clear : this.handleClick}
+            >
+                {symbol}
+            </Button>
+        );
+    }
+
+    private createDigitButton(symbol: string): ReactNode {
+        return <Button onClick={this.handleClick}>{symbol}</Button>
+    }
+
     public render() {
-        const displayString = this.props.result ? this.props.result : this.props.expressions.join("") + this.props.currentOperand;
+        const displayString = this.props.result ? 
+            this.props.result : 
+            this.props.leftOperand + this.props.currentOperator + this.props.rightOperand;
 
         return (
             <CalculatorWrapper>
                 <Display>{displayString}</Display>
                 <Buttons>
-                    <Button onClick={this.handleClick}>7</Button>
-                    <Button onClick={this.handleClick}>4</Button>
-                    <Button onClick={this.handleClick}>1</Button>
-                    <Button background="#B36B00" onClick={this.props.clear}>C</Button>
-                    <Button onClick={this.handleClick}>8</Button>
-                    <Button onClick={this.handleClick}>5</Button>
-                    <Button onClick={this.handleClick}>2</Button>
-                    <Button onClick={this.handleClick}>0</Button>
-                    <Button onClick={this.handleClick}>9</Button>
-                    <Button onClick={this.handleClick}>6</Button>
-                    <Button onClick={this.handleClick}>3</Button>
-                    <Button background="#008040" onClick={this.props.calculate}>=</Button>
-                    <Button background="#CBCC00" onClick={this.handleClick}>+</Button>
-                    <Button background="#CBCC00" onClick={this.handleClick}>-</Button>
-                    <Button background="#CBCC00" onClick={this.handleClick}>*</Button>
-                    <Button background="#CBCC00" onClick={this.handleClick}>/</Button>
+                    {this.createDigitButton('7')}
+                    {this.createDigitButton('4')}
+                    {this.createDigitButton('1')}
+                    {this.createOperationButton('C')}
+                    {this.createDigitButton('8')}
+                    {this.createDigitButton('5')}
+                    {this.createDigitButton('2')}
+                    {this.createDigitButton('0')}
+                    {this.createDigitButton('9')}
+                    {this.createDigitButton('6')}
+                    {this.createDigitButton('3')}
+                    <Button background="#008040" hover="#14ad60" onClick={this.props.calculate}>=</Button>
+                    {this.createOperationButton('+')}
+                    {this.createOperationButton('-')}
+                    {this.createOperationButton('*')}
+                    {this.createOperationButton('/')}
                 </Buttons>
             </CalculatorWrapper>
         )
