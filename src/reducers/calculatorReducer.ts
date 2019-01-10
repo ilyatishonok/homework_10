@@ -1,11 +1,12 @@
 import { ICalculatorState, CalculatorActionsTypes, CalculatorActions } from '../store/types/calculator';
-import { isOperation, calculateExpression, isMinus } from '../utils/calculator';
+import { isOperation, calculateExpression, isMinus, isMultiplicationOrDivision } from '../utils/calculator';
 
 const initialState: ICalculatorState = {
     leftOperand: '0',
     rightOperand: '',
     currentOperator: '',
     result: '',
+    error: '',
 }
 
 const calculatorReducer = (state: ICalculatorState = initialState, action: CalculatorActions): ICalculatorState => {
@@ -13,12 +14,21 @@ const calculatorReducer = (state: ICalculatorState = initialState, action: Calcu
         case CalculatorActionsTypes.ADD_OPERATION:
             const isOperationSymbol = isOperation(action.payload);
 
+            if (state.error) {
+                return {
+                    ...state,
+                    leftOperand: isOperationSymbol ? '0' : action.payload,
+                    currentOperator: isOperationSymbol ? action.payload : '',
+                    error: '',
+                }
+            }
+
             if (state.result) {
                 return { 
                     ...state,
                     leftOperand: isOperationSymbol ? state.result : action.payload,
                     currentOperator: isOperationSymbol ? action.payload : '',
-                    result: ''
+                    result: '',
                 };
             }
 
@@ -27,8 +37,8 @@ const calculatorReducer = (state: ICalculatorState = initialState, action: Calcu
                     return { ...state, currentOperator: action.payload};
                 }
 
-                if (state.currentOperator && !state.rightOperand) {
-                    if ((state.currentOperator === '*' || state.currentOperator === '/') && action.payload === '-') {
+                if (!state.rightOperand) {
+                    if (isMultiplicationOrDivision(state.currentOperator) && isMinus(action.payload)) {
                         return { ...state, rightOperand: action.payload };
                     }
 
@@ -37,11 +47,8 @@ const calculatorReducer = (state: ICalculatorState = initialState, action: Calcu
                     }
                 }
 
-                if (state.currentOperator && state.rightOperand) {
-                    if (state.rightOperand === '-') {
-                        return state;
-                    }
 
+                if (!isMinus(state.rightOperand)) {
                     return { 
                         ...state,
                         currentOperator: action.payload,
@@ -55,12 +62,12 @@ const calculatorReducer = (state: ICalculatorState = initialState, action: Calcu
                         ...state,
                         rightOperand: state.rightOperand + action.payload,
                     }
-                } else {
-                    return {
-                        ...state,
-                        leftOperand: state.leftOperand === '0' ? action.payload : state.leftOperand + action.payload,
-                    };
                 }
+                
+                return {
+                    ...state,
+                    leftOperand: state.leftOperand === '0' ? action.payload : state.leftOperand + action.payload,
+                };
             }
 
             return state;
@@ -68,8 +75,12 @@ const calculatorReducer = (state: ICalculatorState = initialState, action: Calcu
         case CalculatorActionsTypes.CALCULATE_RESULT:
             if (state.currentOperator) {
                 const newResult = !state.rightOperand || isMinus(state.rightOperand) ?
-                `${calculateExpression(state.leftOperand)}` :
-                `${calculateExpression(state.leftOperand + state.currentOperator + state.rightOperand)}`
+                    calculateExpression(state.leftOperand) :
+                    calculateExpression(state.leftOperand + state.currentOperator + state.rightOperand);
+
+                if (isNaN(newResult)) {
+                    return { ...initialState, error: 'Error', };
+                }
 
                 return {
                     ...state,

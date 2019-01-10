@@ -6,6 +6,7 @@ export interface ICalculatorProps {
     leftOperand: string;
     rightOperand: string;
     currentOperator: string;
+    error: string;
 }
 
 export interface ICalculatorDispatchProps {
@@ -110,13 +111,13 @@ class Calculator extends Component<ICalculatorProps & ICalculatorDispatchProps> 
     }
 
     public render() {
-        const displayString = this.props.result ? 
-            this.props.result : 
-            this.props.leftOperand + this.props.currentOperator + this.props.rightOperand;
+        const { error, result, leftOperand, currentOperator, rightOperand } = this.props;
+
+        const displayString = result ? result : leftOperand + currentOperator + rightOperand;
 
         return (
             <CalculatorWrapper>
-                <Display>{displayString}</Display>
+                <Display>{error || displayString}</Display>
                 <Buttons>
                     {this.createDigitButton('7')}
                     {this.createDigitButton('4')}

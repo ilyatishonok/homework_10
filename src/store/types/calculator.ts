@@ -23,5 +23,6 @@ export interface ICalculatorState {
     readonly leftOperand: string;
     readonly rightOperand: string;
     readonly currentOperator: string;
+    readonly error: string;
     readonly result: string;
 };

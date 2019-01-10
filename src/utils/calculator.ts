@@ -9,3 +9,9 @@ export const calculateExpression = (expression: string) => {
 export const isMinus = (symbol: string) => {
     return '-' === symbol;
 }
+
+export const isMultiplicationOrDivision = (symbol: string) => {
+    return ['/', '*'].includes(symbol);
+}
+
+
