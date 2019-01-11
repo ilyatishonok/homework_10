@@ -97,10 +97,6 @@ class Calculator extends Component<ICalculatorProps & ICalculatorDispatchProps> 
         }
     }
 
-    public calculate = () => {
-        this.props.calculate();
-    }
-
     private createOperationButton(symbol: string): ReactNode {
         return (
             <Button
