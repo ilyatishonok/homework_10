@@ -1,5 +1,6 @@
 import React, { Component, MouseEvent, ReactNode } from 'react';
 import styled from 'styled-components';
+import { isOperation } from '../../utils/calculator';
 
 export interface ICalculatorProps {
     result: string;
@@ -13,6 +14,7 @@ export interface ICalculatorDispatchProps {
     addOperation: (operation: string) => void;
     calculate: () => void;
     clear: () => void;
+    addOperand: (operand: string) => void;
 }
 
 export interface ButtonProps {
@@ -87,7 +89,12 @@ const Button = styled.div<ButtonProps>`
 class Calculator extends Component<ICalculatorProps & ICalculatorDispatchProps> {
     public handleClick = (event: MouseEvent) => {
         const value = event.currentTarget.textContent || '';
-        this.props.addOperation(value);
+
+        if (isOperation(value)) {
+            this.props.addOperation(value);
+        } else {
+            this.props.addOperand(value);
+        }
     }
 
     public calculate = () => {

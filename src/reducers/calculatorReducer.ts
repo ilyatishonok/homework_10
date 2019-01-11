@@ -1,5 +1,5 @@
 import { ICalculatorState, CalculatorActionsTypes, CalculatorActions } from '../store/types/calculator';
-import { isOperation, calculateExpression, isMinus, isMultiplicationOrDivision } from '../utils/calculator';
+import { calculateExpression, isMinus, isMultiplicationOrDivision } from '../utils/calculator';
 
 const initialState: ICalculatorState = {
     leftOperand: '0',
@@ -10,64 +10,68 @@ const initialState: ICalculatorState = {
 }
 
 const calculatorReducer = (state: ICalculatorState = initialState, action: CalculatorActions): ICalculatorState => {
+    switch(action.type) {
+        case CalculatorActionsTypes.ADD_OPERAND:
+            if (state.error || state.result) {
+                return {
+                    ...state,
+                    leftOperand: action.payload,
+                    currentOperator: '',
+                    error: '',
+                    result: '',
+                }
+            }
+
+            if (state.currentOperator) {
+                return {
+                    ...state,
+                    rightOperand: state.rightOperand + action.payload,
+                }
+            }
+        
+            return {
+                ...state,
+                leftOperand: state.leftOperand === '0' ? action.payload : state.leftOperand + action.payload,
+            };
+
+    }
     switch (action.type) {
         case CalculatorActionsTypes.ADD_OPERATION:
-            const isOperationSymbol = isOperation(action.payload);
 
-            if (state.error) {
+            if (state.error || state.result) {
                 return {
                     ...state,
-                    leftOperand: isOperationSymbol ? '0' : action.payload,
-                    currentOperator: isOperationSymbol ? action.payload : '',
+                    leftOperand: state.result ? state.result : '0',
+                    currentOperator: action.payload,
                     error: '',
+                    result: '',
                 }
             }
 
-            if (state.result) {
+            if (!state.currentOperator) {
+                return { ...state, currentOperator: action.payload};
+            }
+
+            if (!state.rightOperand) {
+                if (isMultiplicationOrDivision(state.currentOperator) && isMinus(action.payload)) {
+                    return { ...state, rightOperand: action.payload };
+                }
+
+                if (state.currentOperator !== action.payload) {
+                    return { ...state, currentOperator: action.payload };
+                }
+
+                return state;
+            }
+
+
+            if (!isMinus(state.rightOperand)) {
                 return { 
                     ...state,
-                    leftOperand: isOperationSymbol ? state.result : action.payload,
-                    currentOperator: isOperationSymbol ? action.payload : '',
-                    result: '',
-                };
-            }
-
-            if (isOperationSymbol) {
-                if (!state.currentOperator) {
-                    return { ...state, currentOperator: action.payload};
+                    currentOperator: action.payload,
+                    leftOperand: state.leftOperand + state.currentOperator + state.rightOperand,
+                    rightOperand: '',
                 }
-
-                if (!state.rightOperand) {
-                    if (isMultiplicationOrDivision(state.currentOperator) && isMinus(action.payload)) {
-                        return { ...state, rightOperand: action.payload };
-                    }
-
-                    if (state.currentOperator !== action.payload) {
-                        return { ...state, currentOperator: action.payload };
-                    }
-                }
-
-
-                if (!isMinus(state.rightOperand)) {
-                    return { 
-                        ...state,
-                        currentOperator: action.payload,
-                        leftOperand: state.leftOperand + state.currentOperator + state.rightOperand,
-                        rightOperand: '',
-                    }
-                }
-            } else {
-                if (state.currentOperator) {
-                    return {
-                        ...state,
-                        rightOperand: state.rightOperand + action.payload,
-                    }
-                }
-                
-                return {
-                    ...state,
-                    leftOperand: state.leftOperand === '0' ? action.payload : state.leftOperand + action.payload,
-                };
             }
 
             return state;
@@ -84,7 +88,7 @@ const calculatorReducer = (state: ICalculatorState = initialState, action: Calcu
 
                 return {
                     ...state,
-                    result: newResult,
+                    result: `${newResult}`,
                     currentOperator: '',
                     rightOperand: '',
                     leftOperand: '',
